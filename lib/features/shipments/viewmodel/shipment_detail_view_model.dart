@@ -4,11 +4,13 @@ import 'package:logistica_app/features/shipments/data/shipment_repository.dart';
 import 'package:logistica_app/features/shipments/model/shipment_model.dart';
 
 class ShipmentDetailViewModel extends ChangeNotifier {
-  ShipmentDetailViewModel(this._repository);
+  ShipmentDetailViewModel(this._repository, ShipmentModel shipment)
+      : _shipment = shipment,
+        _state = ViewState.success;
 
   final ShipmentRepository _repository;
 
-  ViewState _state = ViewState.initial;
+  ViewState _state;
   String? _errorMessage;
   ShipmentModel? _shipment;
 
@@ -16,10 +18,20 @@ class ShipmentDetailViewModel extends ChangeNotifier {
   String? get errorMessage => _errorMessage;
   ShipmentModel? get shipment => _shipment;
 
-  void setShipment(ShipmentModel shipment) {
-    _shipment = shipment;
-    _state = ViewState.success;
+  Future<void> loadShipmentDetail(String id) async {
+    _state = ViewState.loading;
+    _errorMessage = null;
     notifyListeners();
+
+    try {
+      _shipment = await _repository.fetchShipmentDetail(id);
+      _state = ViewState.success;
+      notifyListeners();
+    } catch (e) {
+      _state = ViewState.error;
+      _errorMessage = e.toString().replaceFirst('Exception: ', '');
+      notifyListeners();
+    }
   }
 
   Future<bool> updateShipment({

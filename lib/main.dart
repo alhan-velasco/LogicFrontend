@@ -95,9 +95,8 @@ class LogisticaApp extends StatelessWidget {
         return MaterialPageRoute(
           settings: settings,
           builder: (context) => ChangeNotifierProvider(
-            create: (_) => ShipmentDetailViewModel(shipmentRepository)
-              ..setShipment(shipment),
-            child: const ShipmentDetailView(),
+            create: (_) => ShipmentDetailViewModel(shipmentRepository, shipment),
+            child: ShipmentDetailView(shipment: shipment),
           ),
         );
       default:

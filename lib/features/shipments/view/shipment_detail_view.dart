@@ -6,7 +6,12 @@ import 'package:logistica_app/features/shipments/viewmodel/shipment_detail_view_
 import 'package:provider/provider.dart';
 
 class ShipmentDetailView extends StatefulWidget {
-  const ShipmentDetailView({super.key});
+  const ShipmentDetailView({
+    super.key,
+    required this.shipment,
+  });
+
+  final ShipmentModel shipment;
 
   @override
   State<ShipmentDetailView> createState() => _ShipmentDetailViewState();
@@ -14,9 +19,8 @@ class ShipmentDetailView extends StatefulWidget {
 
 class _ShipmentDetailViewState extends State<ShipmentDetailView> {
   final _formKey = GlobalKey<FormState>();
-  final _destinationController = TextEditingController();
-  String _selectedStatus = 'pending';
-  bool _initialized = false;
+  late final TextEditingController _destinationController;
+  late String _selectedStatus;
 
   static const List<Map<String, String>> _statusOptions = [
     {'value': 'pending', 'label': 'Pendiente'},
@@ -25,16 +29,11 @@ class _ShipmentDetailViewState extends State<ShipmentDetailView> {
   ];
 
   @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    if (!_initialized) {
-      final shipment =
-          ModalRoute.of(context)!.settings.arguments as ShipmentModel;
-      context.read<ShipmentDetailViewModel>().setShipment(shipment);
-      _destinationController.text = shipment.destination;
-      _selectedStatus = shipment.status;
-      _initialized = true;
-    }
+  void initState() {
+    super.initState();
+    _destinationController =
+        TextEditingController(text: widget.shipment.destination);
+    _selectedStatus = widget.shipment.status;
   }
 
   @override
@@ -124,14 +123,8 @@ class _ShipmentDetailViewState extends State<ShipmentDetailView> {
   @override
   Widget build(BuildContext context) {
     final viewModel = context.watch<ShipmentDetailViewModel>();
-    final shipment = viewModel.shipment;
+    final shipment = viewModel.shipment ?? widget.shipment;
     final isLoading = viewModel.state == ViewState.loading;
-
-    if (shipment == null) {
-      return const Scaffold(
-        body: Center(child: CircularProgressIndicator()),
-      );
-    }
 
     final statusColor = AppTheme.statusColor(shipment.status);
 
