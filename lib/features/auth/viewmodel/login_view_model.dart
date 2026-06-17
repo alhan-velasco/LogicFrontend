@@ -22,7 +22,7 @@ class LoginViewModel extends ChangeNotifier {
     notifyListeners();
 
     try {
-      await _authRepository.login(email: email, password: password);
+      await _authRepository.login(email, password);
       _state = ViewState.success;
       notifyListeners();
       return true;

@@ -1,6 +1,4 @@
-import 'dart:convert';
-
-import 'package:http/http.dart' as http;
+import 'package:logistica_app/core/network/api_service.dart';
 
 class AuthUser {
   const AuthUser({
@@ -15,81 +13,70 @@ class AuthUser {
 }
 
 class AuthRepository {
-  AuthRepository({required this.baseUrl});
+  AuthRepository({required ApiService apiService}) : _apiService = apiService;
 
-  final String baseUrl;
+  final ApiService _apiService;
   AuthUser? _currentUser;
 
   AuthUser? get currentUser => _currentUser;
   String? get token => _currentUser?.token;
   bool get isAuthenticated => _currentUser != null;
 
-  Future<AuthUser> register({
-    required String email,
-    required String password,
-    required String fullName,
-  }) async {
-    final response = await http.post(
-      Uri.parse('$baseUrl/api/auth/register'),
-      headers: {'Content-Type': 'application/json'},
-      body: jsonEncode({
+  Future<AuthUser> login(String email, String password) async {
+    final response = await _apiService.post(
+      '/api/auth/login',
+      body: {
         'email': email,
         'password': password,
-        'full_name': fullName,
-      }),
+      },
     );
 
-    if (response.statusCode == 201) {
-      final data = jsonDecode(response.body) as Map<String, dynamic>;
-      _currentUser = AuthUser(
-        token: data['token'] as String,
-        email: data['email'] as String,
-        fullName: data['full_name'] as String,
-      );
-      return _currentUser!;
-    }
+    _apiService.throwIfNotSuccess(
+      response,
+      fallbackMessage: 'Error al iniciar sesión',
+    );
 
-    throw _parseError(response);
+    final data = _apiService.decodeMap(response);
+    _currentUser = AuthUser(
+      token: data['token'] as String,
+      email: data['email'] as String,
+      fullName: data['full_name'] as String,
+    );
+    _apiService.setAuthToken(_currentUser!.token);
+    return _currentUser!;
   }
 
-  Future<AuthUser> login({
-    required String email,
-    required String password,
-  }) async {
-    final response = await http.post(
-      Uri.parse('$baseUrl/api/auth/login'),
-      headers: {'Content-Type': 'application/json'},
-      body: jsonEncode({
+  Future<AuthUser> register(
+    String email,
+    String password,
+    String name,
+  ) async {
+    final response = await _apiService.post(
+      '/api/auth/register',
+      body: {
         'email': email,
         'password': password,
-      }),
+        'full_name': name,
+      },
     );
 
-    if (response.statusCode == 200) {
-      final data = jsonDecode(response.body) as Map<String, dynamic>;
-      _currentUser = AuthUser(
-        token: data['token'] as String,
-        email: data['email'] as String,
-        fullName: data['full_name'] as String,
-      );
-      return _currentUser!;
-    }
+    _apiService.throwIfNotSuccess(
+      response,
+      fallbackMessage: 'Error al registrar usuario',
+    );
 
-    throw _parseError(response);
+    final data = _apiService.decodeMap(response);
+    _currentUser = AuthUser(
+      token: data['token'] as String,
+      email: data['email'] as String,
+      fullName: data['full_name'] as String,
+    );
+    _apiService.setAuthToken(_currentUser!.token);
+    return _currentUser!;
   }
 
   void logout() {
     _currentUser = null;
-  }
-
-  Exception _parseError(http.Response response) {
-    try {
-      final data = jsonDecode(response.body) as Map<String, dynamic>;
-      final detail = data['detail'];
-      if (detail is String) {
-        return Exception(detail);
-      }
-    } catch (_) {}
-    return Exception('Error de autenticación (${response.statusCode})');
+    _apiService.setAuthToken(null);
   }
 }

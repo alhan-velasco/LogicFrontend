@@ -22,7 +22,7 @@ class ShipmentListViewModel extends ChangeNotifier {
     notifyListeners();
 
     try {
-      _shipments = await _repository.getShipments();
+      _shipments = await _repository.fetchShipments();
       _state = ViewState.success;
       notifyListeners();
     } catch (e) {

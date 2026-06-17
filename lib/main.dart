@@ -1,7 +1,5 @@
-import 'dart:io';
-
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:logistica_app/core/network/api_service.dart';
 import 'package:logistica_app/core/theme/app_theme.dart';
 import 'package:logistica_app/features/auth/data/auth_repository.dart';
 import 'package:logistica_app/features/auth/view/login_view.dart';
@@ -18,24 +16,10 @@ import 'package:logistica_app/features/shipments/viewmodel/shipment_detail_view_
 import 'package:logistica_app/features/shipments/viewmodel/shipment_list_view_model.dart';
 import 'package:provider/provider.dart';
 
-String _resolveBaseUrl() {
-  if (kIsWeb) {
-    return 'http://localhost:8000';
-  }
-  if (Platform.isAndroid) {
-    return 'http://10.0.2.2:8000';
-  }
-  return 'http://localhost:8000';
-}
-
 void main() {
-  final baseUrl = _resolveBaseUrl();
-
-  final authRepository = AuthRepository(baseUrl: baseUrl);
-  final shipmentRepository = ShipmentRepository(
-    baseUrl: baseUrl,
-    authRepository: authRepository,
-  );
+  final apiService = ApiService(baseUrl: ApiService.defaultBaseUrl);
+  final authRepository = AuthRepository(apiService: apiService);
+  final shipmentRepository = ShipmentRepository(apiService: apiService);
 
   runApp(
     LogisticaApp(

@@ -23,11 +23,7 @@ class RegisterViewModel extends ChangeNotifier {
     notifyListeners();
 
     try {
-      await _authRepository.register(
-        fullName: fullName,
-        email: email,
-        password: password,
-      );
+      await _authRepository.register(email, password, fullName);
       _state = ViewState.success;
       notifyListeners();
       return true;

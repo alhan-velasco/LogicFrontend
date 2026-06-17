@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:logistica_app/core/view_state.dart';
 import 'package:logistica_app/features/shipments/data/shipment_repository.dart';
+import 'package:logistica_app/features/shipments/model/shipment_model.dart';
 
 class ShipmentCreateViewModel extends ChangeNotifier {
   ShipmentCreateViewModel(this._repository);
@@ -26,11 +27,13 @@ class ShipmentCreateViewModel extends ChangeNotifier {
 
     try {
       await _repository.createShipment(
-        trackingNumber: trackingNumber,
-        sender: sender,
-        receiver: receiver,
-        destination: destination,
-        status: status,
+        ShipmentModel.forCreate(
+          trackingNumber: trackingNumber,
+          sender: sender,
+          receiver: receiver,
+          destination: destination,
+          status: status,
+        ),
       );
       _state = ViewState.success;
       notifyListeners();

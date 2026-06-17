@@ -1,66 +1,45 @@
-import 'dart:convert';
-
-import 'package:http/http.dart' as http;
-import 'package:logistica_app/features/auth/data/auth_repository.dart';
+import 'package:logistica_app/core/network/api_service.dart';
 import 'package:logistica_app/features/shipments/model/shipment_model.dart';
 
 class ShipmentRepository {
-  ShipmentRepository({
-    required this.baseUrl,
-    required AuthRepository authRepository,
-  }) : _authRepository = authRepository;
+  ShipmentRepository({required ApiService apiService}) : _apiService = apiService;
 
-  final String baseUrl;
-  final AuthRepository _authRepository;
+  final ApiService _apiService;
 
-  Map<String, String> get _headers => {
-        'Content-Type': 'application/json',
-        if (_authRepository.token != null)
-          'Authorization': 'Bearer ${_authRepository.token}',
-      };
-
-  Future<List<ShipmentModel>> getShipments() async {
-    final response = await http.get(
-      Uri.parse('$baseUrl/api/shipments'),
-      headers: _headers,
+  Future<List<ShipmentModel>> fetchShipments() async {
+    final response = await _apiService.get('/api/shipments');
+    _apiService.throwIfNotSuccess(
+      response,
+      fallbackMessage: 'Error al obtener envíos',
     );
 
-    if (response.statusCode == 200) {
-      final List<dynamic> data = jsonDecode(response.body) as List<dynamic>;
-      return data
-          .map((item) => ShipmentModel.fromJson(item as Map<String, dynamic>))
-          .toList();
-    }
-
-    throw _parseError(response);
+    final data = _apiService.decodeList(response);
+    return data
+        .map((item) => ShipmentModel.fromJson(item as Map<String, dynamic>))
+        .toList();
   }
 
-  Future<ShipmentModel> createShipment({
-    required String trackingNumber,
-    required String sender,
-    required String receiver,
-    required String destination,
-    String status = 'pending',
-  }) async {
-    final response = await http.post(
-      Uri.parse('$baseUrl/api/shipments'),
-      headers: _headers,
-      body: jsonEncode({
-        'trackingNumber': trackingNumber,
-        'sender': sender,
-        'receiver': receiver,
-        'destination': destination,
-        'status': status,
-      }),
+  Future<ShipmentModel> createShipment(ShipmentModel shipment) async {
+    final response = await _apiService.post(
+      '/api/shipments',
+      body: shipment.toCreateJson(),
+    );
+    _apiService.throwIfNotSuccess(
+      response,
+      fallbackMessage: 'Error al crear envío',
     );
 
-    if (response.statusCode == 201) {
-      return ShipmentModel.fromJson(
-        jsonDecode(response.body) as Map<String, dynamic>,
-      );
-    }
+    return ShipmentModel.fromJson(_apiService.decodeMap(response));
+  }
 
-    throw _parseError(response);
+  Future<ShipmentModel> fetchShipmentDetail(String id) async {
+    final response = await _apiService.get('/api/shipments/$id');
+    _apiService.throwIfNotSuccess(
+      response,
+      fallbackMessage: 'Error al obtener el detalle del envío',
+    );
+
+    return ShipmentModel.fromJson(_apiService.decodeMap(response));
   }
 
   Future<ShipmentModel> updateShipment({
@@ -72,42 +51,23 @@ class ShipmentRepository {
     if (destination != null) body['destination'] = destination;
     if (status != null) body['status'] = status;
 
-    final response = await http.put(
-      Uri.parse('$baseUrl/api/shipments/$id'),
-      headers: _headers,
-      body: jsonEncode(body),
+    final response = await _apiService.put(
+      '/api/shipments/$id',
+      body: body,
+    );
+    _apiService.throwIfNotSuccess(
+      response,
+      fallbackMessage: 'Error al actualizar envío',
     );
 
-    if (response.statusCode == 200) {
-      return ShipmentModel.fromJson(
-        jsonDecode(response.body) as Map<String, dynamic>,
-      );
-    }
-
-    throw _parseError(response);
+    return ShipmentModel.fromJson(_apiService.decodeMap(response));
   }
 
   Future<void> deleteShipment(String id) async {
-    final response = await http.delete(
-      Uri.parse('$baseUrl/api/shipments/$id'),
-      headers: _headers,
+    final response = await _apiService.delete('/api/shipments/$id');
+    _apiService.throwIfNotSuccess(
+      response,
+      fallbackMessage: 'Error al eliminar envío',
     );
-
-    if (response.statusCode == 204) {
-      return;
-    }
-
-    throw _parseError(response);
-  }
-
-  Exception _parseError(http.Response response) {
-    try {
-      final data = jsonDecode(response.body) as Map<String, dynamic>;
-      final detail = data['detail'];
-      if (detail is String) {
-        return Exception(detail);
-      }
-    } catch (_) {}
-    return Exception('Error en la operación (${response.statusCode})');
   }
 }

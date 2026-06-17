@@ -45,6 +45,35 @@ class ShipmentModel {
     };
   }
 
+  Map<String, dynamic> toCreateJson() {
+    return {
+      'trackingNumber': trackingNumber,
+      'sender': sender,
+      'receiver': receiver,
+      'destination': destination,
+      'status': status,
+    };
+  }
+
+  factory ShipmentModel.forCreate({
+    required String trackingNumber,
+    required String sender,
+    required String receiver,
+    required String destination,
+    String status = 'pending',
+  }) {
+    return ShipmentModel(
+      id: '',
+      trackingNumber: trackingNumber,
+      sender: sender,
+      receiver: receiver,
+      destination: destination,
+      status: status,
+      createdAt: '',
+      updatedAt: '',
+    );
+  }
+
   ShipmentModel copyWith({
     String? id,
     String? trackingNumber,
